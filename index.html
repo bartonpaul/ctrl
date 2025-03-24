@@ -1,11 +1,317 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta http-equiv="refresh" content="0; url=https://7f.ax" />
-    <script>window.location.href = "https://7f.ax"</script>
-    <title>Redirecting...</title>
-  </head>
-  <body>
-    <p>If you're not redirected, <a href="https://7f.ax">click here</a>.</p>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ctrl.alt.7f.ax</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: black;
+      height: 100%;
+      font-family: monospace;
+      color: #00ff00;
+    }
+
+    body.mobile {
+      background: black;
+      overflow: auto;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    .overlay {
+      position: absolute;
+      top: 5vh;
+      left: 5vw;
+      width: 90vw;
+      height: 90vh;
+      background-color: rgba(0, 0, 0, 0.95);
+      border-radius: 12px;
+      border: 2px solid #00ff00;
+      z-index: 1;
+      padding: 2rem;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .terminal-block {
+      font-size: 1.4rem;
+      line-height: 1.8rem;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      overflow-y: auto;
+      flex-grow: 1;
+      padding-bottom: 4rem; /* Space for sticky prompt */
+    }
+
+    .terminal-block a {
+      color: #00ff00;
+      text-decoration: underline;
+    }
+
+    .terminal-input {
+      display: flex;
+      align-items: center;
+      border-top: 1px solid #00ff00;
+      padding-top: 1rem;
+      font-size: 1.4rem;
+      flex-wrap: wrap;
+      position: sticky;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.95);
+      padding-bottom: 1rem;
+    }
+
+    .terminal-input span {
+      margin-right: 8px;
+      white-space: nowrap;
+    }
+
+    .terminal-input input {
+      background: black;
+      border: none;
+      outline: none;
+      color: #00ff00;
+      font-family: monospace;
+      width: 100%;
+      font-size: 1.4rem;
+    }
+
+    @media (max-width: 600px) {
+      .overlay {
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        border: none;
+        border-radius: 0;
+        padding: 1rem;
+      }
+
+      .terminal-block {
+        font-size: 1rem;
+        line-height: 1.4rem;
+      }
+
+      .terminal-input {
+        font-size: 1rem;
+      }
+
+      .terminal-input input {
+        font-size: 1rem;
+      }
+    }
+
+    /* CRT Effects */
+    @keyframes crt-flicker {
+      0%, 100% { opacity: 1; }
+      10%, 30%, 50%, 70% { opacity: 0.85; }
+      20%, 40%, 60%, 80% { opacity: 1; }
+      90% { opacity: 0.9; }
+    }
+
+    @keyframes crt-collapse {
+      0% { transform: scaleY(1); opacity: 1; }
+      60% { transform: scaleY(0.05); opacity: 1; }
+      100% { transform: scaleY(0.05); opacity: 0.9; }
+    }
+
+    @keyframes crt-fade {
+      0% { transform: scaleX(1); opacity: 0.9; }
+      100% { transform: scaleX(0); opacity: 0; }
+    }
+
+    @keyframes white-flash {
+      0% { background: white; opacity: 1; }
+      100% { background: black; opacity: 0; }
+    }
+
+    @keyframes curtain {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    .crt-flicker {
+      animation: crt-flicker 1s linear;
+    }
+
+    .crt-off {
+      animation: crt-collapse 4s ease-out forwards;
+      transform-origin: center;
+    }
+
+    .crt-line {
+      display: inline-block;
+      transform-origin: center;
+      animation: crt-fade 3.2s ease-out 3.2s forwards;
+    }
+
+    .white-flash {
+      position: fixed;
+      background: white;
+      width: 100vw;
+      height: 100vh;
+      top: 0;
+      left: 0;
+      z-index: 999;
+      animation: white-flash 1s ease-out forwards;
+    }
+
+    .black-curtain {
+      position: fixed;
+      background: black;
+      width: 100vw;
+      height: 100vh;
+      top: 0;
+      left: 0;
+      z-index: 999;
+      opacity: 0;
+      animation: curtain 1s ease-in 3.4s forwards;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix"></canvas>
+
+  <div class="overlay" role="main">
+    <div class="terminal-block" id="terminalOutput" aria-label="terminal output">
+paul@ctrl-alt-7f:~$ cat about.txt
+
+Paul Barton is a systems engineer, strategist, and traveller. Prefers sun, avoids clutter.
+
+paul@ctrl-alt-7f:~$ finger paul
+
+Login: paul    
+Name: Paul Barton
+Directory: /home/paul
+Shell: /bin/zsh
+
+Email:   <a href="mailto:0x@7f.ax">0x@7f.ax</a>
+Github:  <a href="https://github.com/bartonpaul" target="_blank">https://github.com/bartonpaul</a>
+
+Last login: <span id="lastLogin">loading...</span>
+
+Plan: Continue exploring tech, travel, and truth — with minimalist flair.
+
+paul@ctrl-alt-7f:~$ gpg --recv-keys 0x@7f.ax
+
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+xjMEZ+FLVBYJKwYBBAHaRw8BAQdATnWbqnS4lkzdFD2OReJjQ91fZOadmYjj
+UUkIY0xzjVHNEzB4QDdmLmF4IDwweEA3Zi5heD7CwBEEExYKAIMFgmfhS1QD
+CwkHCZCuzSI0IOpUm0UUAAAAAAAcACBzYWx0QG5vdGF0aW9ucy5vcGVucGdw
+anMub3Jnin5QaWXrjRniKytGAQHEbLv11aIh4vX23ccsQvqa8woDFQoIBBYA
+AgECGQECmwMCHgEWIQRMv+wtDF3ubxds8NeuzSI0IOpUmwAAlK8A/2D0Gn2r
+B/qDJmfzVRzEup30gGzd2A/knprDswWct6MBAP9Jz46XmZMgUJQLFrm7ANvh
+KjmOBa5vsMNaPQPIqDHLBc44BGfhS1QSCisGAQQBl1UBBQEBB0AoGCbl8OiW
+olG8hE4GQ5BJHVYHYc6LcqM78jPkDutcJwMBCAfCvgQYFgoAcAWCZ+FLVAmQ
+rs0iNCDqVJtFFAAAAAAAHAAgc2FsdEBub3RhdGlvbnMub3BlbnBncGpzLm9y
+Z2HNe5FJHcSOzCkPqlTCIMouQcO0kjuSnbu9vV2mZbSyApsMFiEETL/sLQxd
+7m8XbPDXrs0iNCDqVJsAANGBAP9FtoF4e96tNGAikFz/JmShRgDt+1HS0Vlo
+/3N+dpW1tgD/Qw1Yoi6IMix3l+3kIAkfvbeqlEgy3dxYH7xd1o/MtQY=
+=OPJ4
+-----END PGP PUBLIC KEY BLOCK-----
+    </div>
+
+    <div class="terminal-input">
+      <span>paul@ctrl-alt-7f:~$</span>
+      <input type="text" id="terminalInput" autocomplete="off" placeholder="type 'shutdown' and press Enter" aria-label="command input" />
+    </div>
+  </div>
+
+  <script>
+    const isMobile = window.innerWidth < 600;
+
+    if (!isMobile) {
+      const canvas = document.getElementById('matrix');
+      const ctx = canvas.getContext('2d');
+      const fontSize = 14;
+
+      let columns, drops;
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        columns = Math.floor(canvas.width / fontSize);
+        drops = Array.from({ length: columns }).fill(1);
+      }
+
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+
+      const chars = '01゠ァアィイゥウェエォオ';
+      function drawMatrixRain() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#00ff00';
+        ctx.font = fontSize + 'px monospace';
+
+        for (let i = 0; i < drops.length; i++) {
+          const text = chars[Math.floor(Math.random() * chars.length)];
+          ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+          if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+            drops[i] = 0;
+          }
+          drops[i]++;
+        }
+      }
+
+      const rainInterval = setInterval(drawMatrixRain, 33);
+      setTimeout(() => {
+        clearInterval(rainInterval);
+        canvas.style.transition = 'opacity 1s ease';
+        canvas.style.opacity = '0';
+      }, 3500);
+
+      const overlay = document.querySelector('.overlay');
+      function triggerFlicker() {
+        const duration = Math.random() < 0.3
+          ? 300 + Math.random() * 200
+          : 2000 + Math.random() * 1000;
+        overlay.classList.add('crt-flicker');
+        setTimeout(() => overlay.classList.remove('crt-flicker'), duration);
+      }
+
+      setInterval(triggerFlicker, 15000 + Math.random() * 8000);
+    }
+
+    function formatLastLogin() {
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - 135);
+      const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return `${days[now.getDay()]} ${months[now.getMonth()]} ${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')} ${now.getFullYear()}`;
+    }
+
+    document.getElementById("lastLogin").innerText = formatLastLogin();
+
+    const terminalInput = document.getElementById('terminalInput');
+    terminalInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        const command = terminalInput.value.trim().toLowerCase();
+        if (command === 'shutdown') {
+          document.body.innerHTML = `
+            <div class="white-flash"></div>
+            <div style="background:black; height:100vh; display:flex; align-items:center; justify-content:center;">
+              <div class="crt-flicker crt-off" style="color:#00ff00; font-family:monospace; font-size:3rem;">
+                <span class="crt-line">System shutting down...</span>
+              </div>
+            </div>
+            <div class="black-curtain"></div>
+          `;
+        }
+        terminalInput.value = '';
+      }
+    });
+  </script>
+</body>
 </html>
